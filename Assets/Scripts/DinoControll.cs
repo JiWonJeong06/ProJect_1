@@ -1,69 +1,62 @@
 using UnityEngine;
 
-public class DinoController : MonoBehaviour
+public class DinoControll : MonoBehaviour
 {
-    public float jumpForce = 10f;
+    [SerializeField]private float speed = 10f;
+    [SerializeField]private int hp = 3;
 
-    private Rigidbody2D rb;
-    private CapsuleCollider2D col; 
-    private Animator anim;
+    private Vector3 targetPos;
 
-    private bool isGrounded = true;
-    private bool isSliding = false;
-
-    private Vector2 originalSize;    
-    //private Vector2 originalOffset; 
-
-    void Start()
+    void Update()
     {
-        rb = GetComponent<Rigidbody2D>();
-        col = GetComponent<CapsuleCollider2D>();  
-        anim = GetComponent<Animator>();
-
-        originalSize = col.size;
-        //originalOffset = col.offset;
-
-        anim.SetBool("isRunning", true);
-    }
-
-    public void Jump()
-    {
-        if (!isGrounded || isSliding) return;
-
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-        isGrounded = false;
-
-        anim.SetTrigger("Jump");
-        anim.SetBool("isGrounded", false);
-    }
-
-    public void SlideStart()
-    {
-        if (isSliding || !isGrounded) return;
-        isSliding = true;
-
-        col.size = new Vector2(originalSize.x, originalSize.y * 0.5f);
-        //col.offset = new Vector2(originalOffset.x, originalOffset.y - originalSize.y * 0.25f);
-
-        anim.SetBool("isSliding", true);
-    }
-
-    public void SlideEnd()
-    {
-        isSliding = false;
-
-        col.size = originalSize;
-        //col.offset = originalOffset;
-
-        anim.SetBool("isSliding", false);
-    }
-
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
+        // 터치
+        if (Input.touchCount > 0)
         {
-            isGrounded = true;
-            anim.SetBool("isGrounded", true);
+            Touch touch = Input.GetTouch(0);
+
+            Vector3 touchPos = Camera.main.ScreenToWorldPoint(touch.position);
+            touchPos.z = 0;
+
+            targetPos = touchPos;
+        }
+
+        // 테스트용(마우스)
+        if (Input.GetMouseButton(0))
+        {
+            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mousePos.z = 0;
+
+            targetPos = mousePos;
+        }
+
+        // 부드럽게 이동
+        transform.position = Vector3.Lerp(transform.position, targetPos, speed * Time.deltaTime);
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            TakeDamage(1);
+            Destroy(other.gameObject);
         }
     }
+
+     public void TakeDamage(int damage)
+    {
+        hp -= damage;
+        Debug.Log("HP: " + hp);
+
+        if (hp <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        Debug.Log("죽음");
+        gameObject.SetActive(false);
+    }
+
 }
