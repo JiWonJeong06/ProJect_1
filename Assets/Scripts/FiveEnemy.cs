@@ -9,6 +9,10 @@ public class FiveEnemy : MonoBehaviour
     [SerializeField] private float spawnRate = 0.5f;
     [SerializeField] private float spawnChance = 0.7f;
 
+    [SerializeField]private int patternCount = 0;
+    [SerializeField] private int level = 0;
+
+
     void Start()
     {
         InvokeRepeating(nameof(SpawnPattern), 1f, spawnRate);
@@ -16,6 +20,13 @@ public class FiveEnemy : MonoBehaviour
 
     void SpawnPattern()
     {
+        patternCount++;
+
+        if (patternCount % 3 == 0)
+        {
+            level++;
+        }
+
         List<Transform> selected = new List<Transform>();
 
         foreach (Transform point in spawnPoints)
@@ -35,7 +46,11 @@ public class FiveEnemy : MonoBehaviour
 
         foreach (Transform point in selected)
         {
-            Instantiate(bulletPrefab, point.position, Quaternion.identity);
+            GameObject obj = Instantiate(bulletPrefab, point.position, Quaternion.identity);
+
+            Enemy enemy = obj.GetComponent<Enemy>();
+        
+            enemy.ApplyLevel(level);
         }
     }
 }
