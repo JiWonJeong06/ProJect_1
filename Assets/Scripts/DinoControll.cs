@@ -1,11 +1,22 @@
 using UnityEngine;
+using System.Collections;
 
 public class DinoControll : MonoBehaviour
 {
     [SerializeField]private float speed = 10f;
-    [SerializeField]private int hp = 3;
+    [SerializeField]private int hp = 100;
+    [SerializeField]private GameObject nextUI;
 
+    [SerializeField] private float invincibleTime = 3f;
+
+    private bool isInvincible = false;
     private Vector3 targetPos;
+    private SpriteRenderer sr;
+
+    void Start()
+    {
+        sr = GetComponent<SpriteRenderer>(); 
+    }
 
     void Update()
     {
@@ -30,19 +41,25 @@ public class DinoControll : MonoBehaviour
         }
 
         // 부드럽게 이동
-        transform.position = Vector3.Lerp(transform.position, targetPos, speed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetPos,
+            speed * Time.deltaTime
+        );
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Enemy"))
+        if (other.CompareTag("Enemy") && !isInvincible)
         {
-            TakeDamage(1);
-            Destroy(other.gameObject);
+            Enemy enemy = other.GetComponent<Enemy>();
+
+            TakeDamage(enemy.getDamage());
+            StartCoroutine(InvincibleRoutine());
         }
     }
 
-     public void TakeDamage(int damage)
+    public void TakeDamage(int damage)
     {
         hp -= damage;
         Debug.Log("HP: " + hp);
@@ -56,7 +73,39 @@ public class DinoControll : MonoBehaviour
     private void Die()
     {
         Debug.Log("죽음");
+        Time.timeScale = 0f;
         gameObject.SetActive(false);
+        nextUI.SetActive(true);
+    }
+
+
+    IEnumerator InvincibleRoutine()
+    {
+        isInvincible = true;
+
+        float endTime = Time.time + invincibleTime;
+
+        while (Time.time < endTime)
+        {
+            SetAlpha(0.3f);
+            yield return new WaitForSeconds(0.2f);
+
+            SetAlpha(1f);
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        SetAlpha(1f);
+        isInvincible = false;
+    }
+
+    void SetAlpha(float alpha)
+    {
+        if (sr != null)
+        {
+            Color c = sr.color;
+            c.a = alpha;
+            sr.color = c;
+        }
     }
 
 }
